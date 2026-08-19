@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: ai-tutor-backend
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_FROM_NUMBER
+        sync: false
+      - key: WEBHOOK_VERIFY_SIGNATURE
+        value: "false"
+      - key: VANI_WEBHOOK_SECRET
+        sync: false
+      - key: VANI_SIGNATURE_HEADER
+        value: "X-Webhook-Signature"
+      - key: NOTES_LLM_PROVIDER
+        value: "gemini"
+      - key: DB_PATH
+        value: "data.json"

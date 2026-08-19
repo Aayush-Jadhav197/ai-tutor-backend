@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Get Your Revision Notes</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    max-width: 460px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+    color: #1a1a1a;
+    background: #fafafa;
+  }
+  h1 { font-size: 22px; text-align: center; margin-bottom: 4px; }
+  p.subtitle { text-align: center; color: #666; margin-top: 0; font-size: 14px; }
+
+  .card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+  }
+
+  label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  input {
+    width: 100%;
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  input:focus { outline: none; border-color: #4a90d9; }
+
+  button {
+    width: 100%;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    background: #1a1a1a;
+    color: #fff;
+    cursor: pointer;
+  }
+  button:disabled { background: #999; cursor: not-allowed; }
+  button:active:not(:disabled) { opacity: 0.85; }
+
+  #error {
+    color: #b00020;
+    background: #fdecea;
+    border-radius: 8px;
+    padding: 10px 12px;
+    margin-top: 16px;
+    font-size: 14px;
+    display: none;
+  }
+
+  #result { display: none; margin-top: 20px; }
+  #notesText {
+    white-space: pre-wrap;
+    font-size: 15px;
+    line-height: 1.6;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 20px;
+  }
+  #printBtn {
+    margin-top: 12px;
+    background: #4a90d9;
+  }
+
+  @media print {
+    body * { visibility: hidden; }
+    #notesText, #notesText * { visibility: visible; }
+    #notesText {
+      position: absolute; top: 0; left: 0; width: 100%;
+      border: none; padding: 0;
+    }
+    h1, p.subtitle, .card, #printBtn { display: none !important; }
+  }
+</style>
+</head>
+<body>
+  <h1>📘 Get Your Revision Notes</h1>
+  <p class="subtitle">Enter the phone number and code from your SMS</p>
+
+  <div class="card">
+    <label for="phone">Phone Number</label>
+    <input id="phone" type="tel" inputmode="tel" placeholder="9876543210" autocomplete="tel">
+
+    <label for="code">6-Digit Code</label>
+    <input id="code" type="text" inputmode="numeric" placeholder="482731" maxlength="6">
+
+    <button id="getBtn" onclick="getNotes()">GET NOTES</button>
+  </div>
+
+  <div id="error"></div>
+
+  <div id="result">
+    <div id="notesText"></div>
+    <button id="printBtn" onclick="window.print()">🖨️ PRINT NOTES</button>
+  </div>
+
+<script>
+async function getNotes() {
+  const phone = document.getElementById('phone').value.trim();
+  const code = document.getElementById('code').value.trim();
+  const errorEl = document.getElementById('error');
+  const resultEl = document.getElementById('result');
+  const getBtn = document.getElementById('getBtn');
+
+  errorEl.style.display = 'none';
+  resultEl.style.display = 'none';
+
+  if (!phone || !code) {
+    errorEl.textContent = 'Please enter both phone number and code.';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  getBtn.disabled = true;
+  getBtn.textContent = 'LOADING...';
+
+  try {
+    const res = await fetch(`/notes?phone=${encodeURIComponent(phone)}&code=${encodeURIComponent(code)}`);
+    const data = await res.json();
+
+    if (!res.ok) {
+      errorEl.textContent = data.error || 'Notes not found. Check your phone number and code.';
+      errorEl.style.display = 'block';
+      return;
+    }
+
+    document.getElementById('notesText').textContent = data.notes;
+    resultEl.style.display = 'block';
+  } catch (e) {
+    errorEl.textContent = 'Something went wrong. Please try again.';
+    errorEl.style.display = 'block';
+  } finally {
+    getBtn.disabled = false;
+    getBtn.textContent = 'GET NOTES';
+  }
+}
+
+// Allow pressing Enter in either field to submit
+document.getElementById('code').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') getNotes();
+});
+document.getElementById('phone').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') getNotes();
+});
+</script>
+</body>
+</html>

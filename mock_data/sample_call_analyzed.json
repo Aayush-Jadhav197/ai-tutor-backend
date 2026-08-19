@@ -1,0 +1,48 @@
+{
+  "id": "evt_7f983fbe-6c0c-4eb4-925c-fe2e4567f1fc",
+  "type": "call.analyzed",
+  "api_version": "2026-03",
+  "created": 1778432260,
+  "data": {
+    "event_type": "call.analyzed",
+    "timestamp": "2026-08-18T10:02:10Z",
+    "api_version": "2026-03",
+    "conversation_id": "conv_test_001",
+    "call_sid": "CA_test_call_001",
+    "workspace_id": "ws_slepy_hackathon",
+    "agent_id": 1089,
+    "agent_name": "AI Learning Tutor",
+    "direction": "inbound",
+    "from_number": "9876543210",
+    "to_number": "18001234567",
+    "recipient_phone": "9876543210",
+    "call_provider": "plivo",
+    "call_source": "widget",
+    "language": "hi",
+    "llm_mode": "native_audio",
+    "campaign_id": null,
+    "campaign_call_id": null,
+    "variables": {},
+    "analysis_type": "post_call_complete",
+    "analyzed_at": "2026-08-18T10:02:12Z",
+    "started_at": "2026-08-18T10:00:00Z",
+    "ended_at": "2026-08-18T10:02:10Z",
+    "call_duration": 130,
+    "call_duration_min": 2.2,
+    "call_summary": "Student asked about Newton's third law and a follow-up example.",
+    "transcript": [
+      {"speaker": "agent", "text": "Namaste! Aap kya seekhna chahte hain?", "timestamp": "2026-08-18T10:00:05Z"},
+      {"speaker": "user", "text": "Newton ka third law samjhao", "timestamp": "2026-08-18T10:00:12Z"},
+      {"speaker": "agent", "text": "Newton ka teesra niyam kehta hai ki har action ka ek barabar aur ulta reaction hota hai. Jaise jab tum deewar ko dhakka dete ho, deewar bhi tumhe wapas dhakka deti hai.", "timestamp": "2026-08-18T10:00:20Z"},
+      {"speaker": "user", "text": "Ek aur example batao", "timestamp": "2026-08-18T10:00:40Z"},
+      {"speaker": "agent", "text": "Jab tum cycle chalate ho, pedal maarne se force zameen par lagta hai, aur zameen tumhe aage dhakka deti hai - isi wajah se cycle aage badhti hai.", "timestamp": "2026-08-18T10:00:50Z"}
+    ],
+    "qualification_data": {
+      "customer_name": null,
+      "phone_number": "9876543210",
+      "interested": null
+    },
+    "recording_url": "https://voice-agent.edesy.in/api/recordings/conv_test_001/stream?download=true",
+    "has_recording": false
+  }
+}
