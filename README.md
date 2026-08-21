@@ -1,23 +1,58 @@
 # AI Tutor Backend (Person 2 side)
 
-## Status: Vani → Flask pipeline complete and verified against Vani's real docs
+## Status: Vani → Flask pipeline complete, notes generation on Featherless
 
 This backend receives Vani's `call.analyzed` webhook, stores the
-transcript, generates revision notes via Gemini, sends the SMS with a
-retrieval code, and serves a printable notes webpage. Everything below was
-checked against the actual 121-page Vani documentation PDF, not assumed.
+transcript, generates revision notes, sends the SMS with a retrieval code,
+and serves a printable notes webpage. Everything below was checked against
+the actual 121-page Vani documentation PDF, not assumed.
+
+**Notes generation now runs on Featherless, not Gemini** (see "Why we
+switched off Gemini" below) - this only affects the post-call notes step,
+not anything Vani itself does.
 
 ## What changed vs. the original Twilio-based plan
 
 - The **live** call (STT → LLM → TTS) happens *inside Vani*, on its
-  built-in Gemini model. We don't write code for that - `vani_system_prompt.txt`
-  gets pasted into the Vani agent config (already done, per your setup).
+  own built-in model (per your Vani agent config - Gemini 2.5 Flash-Lite).
+  We don't write code for that - `vani_system_prompt.txt` gets pasted into
+  the Vani agent config (already done, per your setup). This is completely
+  separate from the Featherless/Gemini choice below, which only affects
+  the *post-call* notes step.
 - Vani sends a **`call.analyzed` webhook** once, at the end of a call, with
   the full transcript in one payload. Vani's own docs recommend this as
   "the single event to subscribe to" - so that's the only event type this
   backend handles.
 - SMS still goes through **Twilio**, decoupled from voice - Vani handles
   telephony, Twilio only sends the post-call notes SMS.
+
+## Why we switched off Gemini for notes generation
+
+Gemini was the original default for the post-call notes step (separate
+from Vani's own in-call model, which is untouched). It got dropped after
+hitting two real, unrelated failures during this build:
+
+1. **API key format churn.** Google AI Studio started issuing new
+   `AQ.`-prefixed keys instead of the classic `AIzaSy...` format, and the
+   `AQ.` keys don't work with the standard REST endpoint
+   (`generativelanguage.googleapis.com`) that a plain `requests.post` call
+   uses - a live, widely-reported issue on Google's own developer forums,
+   not a bug in this code.
+2. **Model retirement.** `gemini-2.0-flash` (the model this code
+   originally called) returned `404 Not Found` - Google retired it.
+
+Both are Google-side changes outside this project's control, and could
+recur. **Featherless doesn't have either failure mode**: a plain bearer
+token (no key-format churn) and no dependency on Google's model lifecycle.
+It was also already in the original hackathon plan before Vani entered
+the picture.
+
+Gemini support is still in `llm.py` and works if you ever want to switch
+back - set `NOTES_LLM_PROVIDER=gemini` and fill in `GEMINI_API_KEY`. The
+Gemini model name is now also an env var (`GEMINI_MODEL`, defaults to
+`gemini-2.5-flash-lite` - Google's own documented migration target for the
+retired `gemini-2.0-flash`) so a future Google-side deprecation is a
+Render dashboard edit, not another code push.
 
 ## Verified against Vani's actual webhook documentation
 
@@ -45,7 +80,7 @@ spec, and are now fixed:
 ai-tutor-backend/
   app.py                          Flask app: webhook + notes API + printable page
   notes.py                        Builds the notes prompt, calls the LLM
-  llm.py                          Gemini/Featherless client, retry logic, offline mock
+  llm.py                          Featherless/Gemini client, retry logic, offline mock
   store.py                        JSON-file storage (calls, notes, codes, idempotency)
   sms.py                          Twilio SMS + offline mock
   vani_system_prompt.txt          Already pasted into the Vani agent config
@@ -67,7 +102,7 @@ python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
-# fill in GEMINI_API_KEY (or leave blank to use the offline mock) and
+# fill in FEATHERLESS_API_KEY (or leave blank to use the offline mock) and
 # TWILIO_* (or leave blank to just print the SMS to console)
 ```
 
@@ -86,7 +121,7 @@ python3 test_integration.py   # reliability: signature verification, duplicate w
   backoff) is recognized as a duplicate and not double-processed
 - an empty transcript doesn't crash the handler
 - a missing phone number skips the SMS step but still generates notes
-- a real Gemini failure (key configured, call still fails) marks notes as
+- a real LLM failure (key configured, call still fails) marks notes as
   **pending** instead of silently sending fabricated content
 - the printable notes page renders and round-trips through `/notes`
 
@@ -120,6 +155,43 @@ secret. Confirmed spec, straight from Vani's "Webhooks & Events" doc page:
 Before the real demo: set `WEBHOOK_VERIFY_SIGNATURE=true` and
 `VANI_WEBHOOK_SECRET=<value from Vani>` (see manual steps below for where
 to get that secret).
+
+### Troubleshooting: "the call ends but no code/SMS ever arrives"
+
+If Render's logs show `POST /webhook/vani ... 401` repeated 3-5 times
+(with growing gaps between attempts - that's Vani's retry backoff), the
+problem is confirmed: **every delivery is being rejected at the signature
+check**, so the pipeline (notes/SMS) never even starts. Work through this
+in order:
+
+1. **Isolate the problem.** Temporarily set `WEBHOOK_VERIFY_SIGNATURE=false`
+   on Render and trigger another test call. If the code/SMS now arrives,
+   the signature check was the only issue - move to step 2. If it still
+   doesn't arrive, the problem is downstream (Featherless/Twilio/etc.) -
+   check the Render logs for `[app.py]`/`[llm.py]` error lines instead.
+2. **Check the Render logs for the new diagnostic line** (added in this
+   fix): `[app.py] Signature mismatch. received_len=... expected_len=...`.
+   - If the lengths differ, the header format doesn't match what the code
+     expects (see `verify_webhook_signature()` in `app.py` - it already
+     tolerates a `sha256=` prefix; if Vani uses something else entirely,
+     that function needs one more variant added).
+   - If the lengths match but the prefixes differ, the **secret itself is
+     wrong** - almost always a copy-paste issue (trailing space/newline,
+     or an old secret from before the webhook was edited/regenerated).
+     Re-copy it fresh from Vani's dashboard into Render's
+     `VANI_WEBHOOK_SECRET` field.
+   - Also check the logged `Request headers received: [...]` line - if
+     `X-Webhook-Signature` isn't in that list at all, Vani is sending a
+     differently-named header for your account/plan; update
+     `VANI_SIGNATURE_HEADER` on Render to match.
+3. **Re-enable the webhook subscription in Vani.** Per Vani's own docs:
+   *"After consecutive failures, the subscription is auto-disabled and
+   visible in Settings → Webhooks for re-enablement."* Five failed
+   attempts (as seen in the logs) is enough to trigger this - fixing the
+   secret alone may not be enough if the subscription itself is now
+   sitting disabled. Check Settings → Webhooks in Vani and re-enable it
+   after fixing the secret.
+4. Set `WEBHOOK_VERIFY_SIGNATURE` back to `true` once confirmed working.
 
 ## Reliability / error handling
 
@@ -160,7 +232,7 @@ but double-check them in the dashboard on first deploy. Then set these
 environment variables under the service's "Environment" tab (not
 committed to git):
 
-- `GEMINI_API_KEY`
+- `FEATHERLESS_API_KEY`
 - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`
 - `WEBHOOK_VERIFY_SIGNATURE=true` and `VANI_WEBHOOK_SECRET=<from Vani>`
 
@@ -212,8 +284,6 @@ that can be done from here.
 
 ## Explicitly not done (out of scope per the plan)
 
-- Replacing Gemini with Featherless (not in Vani's LLM list; Gemini is the
-  hackathon default per your own priority order)
 - Any change to Vani's STT/TTS/voice config - your live call is already
   working, untouched here
 - A real database (JSON file + lock is sufficient for hackathon scale)
