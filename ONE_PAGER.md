@@ -107,53 +107,11 @@ The learner can enter their phone number to retrieve the latest notes.
 
 
 Architecture:
-                ┌──────────────────┐
-                │     Learner      │
-                │                  │
-                │    Phone Call    │
-                └────────┬─────────┘
-                         │
-                         ▼
-                ┌──────────────────┐
-                │       Vani       │
-                │  Voice Assistant │
-                └────────┬─────────┘
-                         │
-                  call.analyzed
-                         │
-                         ▼
-                ┌──────────────────┐
-                │  Flask Backend   │
-                │                  │
-                │ Webhook Handler  │
-                └────────┬─────────┘
-                         │
-                         ▼
-                ┌──────────────────┐
-                │    Transcript    │
-                │    Processing    │
-                └────────┬─────────┘
-                         │
-                         ▼
-                ┌──────────────────┐
-                │ AI Notes         │
-                │ Generation       │
-                └────────┬─────────┘
-                         │
-                         ▼
-                ┌──────────────────┐
-                │     Storage      │
-                │                  │
-                │ Phone → Notes    │
-                └────────┬─────────┘
-                         │
-                         ▼
-                ┌──────────────────┐
-                │   Notes Page     │
-                │                  │
-                │ Phone Number →   │
-                │ Revision Notes   │
-                └──────────────────┘
+         
+
+## Architecture
+
+**Learner** → **Phone Call** → **Vani Voice Assistant** → **call.analyzed Webhook** → **Flask Backend** → **Transcript Processing** → **AI Notes Generation** → **Notes Storage** → **Notes Webpage** → **Learner retrieves revision notes using their phone number**
 
 
 
@@ -162,39 +120,40 @@ Architecture:
 
 
 
-Technology Stack
-Python
-Flask
-Vani voice agent
-Webhook-based call processing
-Featherless AI for post-call notes generation
-HTML/CSS for the notes interface
-Render for backend deployment
-GitHub for source control
+
+## Technology Stack
+
+- **Python** — backend development
+- **Flask** — webhook handling and web server
+- **Vani** — voice-based phone interaction
+- **Webhook processing** — receives post-call conversation data
+- **Featherless AI** — post-call notes generation
+- **HTML/CSS** — notes interface
+- **Render** — backend deployment
+- **GitHub** — source control
 
 
 
 
 
 
-Repository Structure:
-.
-├── app.py
-├── llm.py
-├── notes.py
-├── store.py
-├── sms.py
-├── templates/
-│   └── notes.html
-├── mock_data/
-├── data.json
-├── requirements.txt
-├── render.yaml
-├── Procfile
-├── test_day1.py
-├── test_integration.py
-├── vani_system_prompt.txt
-└── README.md
+## Repository Structure
+
+**app.py** → Flask application and webhook entry point  
+**llm.py** → AI/LLM integration  
+**notes.py** → Notes generation logic  
+**store.py** → Notes storage and retrieval  
+**sms.py** → SMS-related functionality  
+**templates/notes.html** → Notes webpage  
+**mock_data/** → Test/mock data  
+**data.json** → Local data storage  
+**requirements.txt** → Python dependencies  
+**render.yaml** → Render deployment configuration  
+**Procfile** → Application start command  
+**test_day1.py** → Basic tests  
+**test_integration.py** → Integration tests  
+**vani_system_prompt.txt** → Vani assistant instructions  
+**README.md** → Project documentation
 
 
 
