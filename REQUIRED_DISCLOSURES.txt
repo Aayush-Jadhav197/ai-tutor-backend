@@ -1,0 +1,54 @@
+# Required Disclosures
+
+## AI Tools and Models Used
+
+This project was developed with assistance from multiple AI tools during the development, debugging, documentation, and iteration process.
+
+### ChatGPT
+Used for:
+- Software development assistance
+- Debugging and troubleshooting
+- Code review and refactoring suggestions
+- Documentation and README/one-pager drafting
+- Project planning and iteration
+
+### Claude
+Used for:
+- Development assistance
+- Code review and problem-solving
+- Documentation and iteration
+
+### Gemini
+Used for:
+- Development assistance
+- Problem-solving and iteration
+
+### Featherless AI
+Used in the deployed prototype for post-call AI notes generation. The conversation transcript received after a Vani call is processed to generate structured revision notes.
+
+### Vani
+Used as the voice interaction layer of the prototype. Vani handles the phone conversation and provides the post-call `call.analyzed` webhook containing the conversation transcript and call information.
+
+## AI-Generated Code and Content
+
+AI tools were used as development assistants throughout the project. The final implementation was reviewed, adapted, integrated, and tested by the project team.
+
+AI assistance was used for code, debugging, documentation, architecture discussions, and general development support. The project team remains responsible for the final implementation and submission.
+
+## Datasets
+
+No external public dataset was used to train the system.
+
+The prototype uses conversation transcripts generated through actual test phone calls and mock/test data where applicable.
+
+## External Services
+
+The prototype uses:
+- Vani for phone-based voice interaction
+- Featherless AI for post-call notes generation
+- Render for backend deployment
+- GitHub for source control
+
+## Disclosure Summary
+
+All material AI tools and external services used in building the prototype are disclosed above. No undisclosed external dataset was used for training.
