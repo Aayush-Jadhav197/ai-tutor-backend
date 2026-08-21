@@ -127,9 +127,21 @@ def handle_call_analyzed(payload: dict) -> dict:
     down the webhook handler.
     """
     data = payload.get("data", {})
+    print(f"[DEBUG] Event type: {payload.get('type')}")
+    print(f"[DEBUG] Data keys: {list(data.keys())}")
+    print(f"[DEBUG] Full data: {data}")
     call_id = resolve_call_id(payload, data)
-    phone_number = data.get("from_number") or data.get("phone_number") or ""
+    phone_number = (
+        data.get("from_number")
+        or data.get("phone_number")
+        or data.get("caller_number"
+                    or data.get("from")
+                    or ""
+                    )
+        print(f"[DEBUG] Extracted phone number: {phone_number}")
     messages = data.get("transcript", [])
+        print(f"[DEBUG] Transcript type: {type(messages)}")
+        print(f"[DEBUG] Transcript length: {len(messages) if messages else 0}")
 
     store.save_call(call_id, phone_number, messages)
 
@@ -144,7 +156,9 @@ def handle_call_analyzed(payload: dict) -> dict:
         }
 
     try:
+        print(f"[DEBUG] Starting notes generation for {call_id}")
         notes = generate_notes(messages)
+        print(f"[DEBUG] Notes generated successfully for {call_id}")
     except LLMError as e:
         # Real LLM failure (key configured, call still failed after
         # retries). Don't fabricate notes - save what we have and flag it
@@ -163,6 +177,7 @@ def handle_call_analyzed(payload: dict) -> dict:
 
     sms_status = "skipped_no_phone"
     if phone_number:
+        print(f"[DEBUG] Attempting SMS to: {phone_number}")
         sms_body = build_notes_sms(code)
         try:
             send_sms(phone_number, sms_body)
