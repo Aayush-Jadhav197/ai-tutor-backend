@@ -132,10 +132,11 @@ def handle_call_analyzed(payload: dict) -> dict:
     print(f"[DEBUG] Full data: {data}")
     call_id = resolve_call_id(payload, data)
     phone_number = (
-        data.get("from_number")
+        data.get("recipient_phone")
+        or data.get("to_number")
         or data.get("phone_number")
-        or data.get("caller_number")
-        or data.get("from")
+        or data.get("variables", {}).get("phone_number")
+        or data.get("variables", {}).get("recipient_phone_number")
         or ""
     )
     print(f"[DEBUG] Extracted phone number: {phone_number}")
