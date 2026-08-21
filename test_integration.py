@@ -135,11 +135,15 @@ def test_llm_failure_marks_pending_not_fake_notes():
     payload["data"] = dict(payload["data"])
     payload["data"]["conversation_id"] = "conv_llm_fail_test"
 
-    # Simulate: a real API key IS configured, but every call fails.
-    with patch.object(llm, "GEMINI_API_KEY", "fake-but-present-key"), \
+    # Simulate: a real API key IS configured for the active provider, but
+    # every call fails. Patches PROVIDER explicitly (rather than relying on
+    # whatever the current default happens to be) so this test still means
+    # something if the default provider changes again later.
+    with patch.object(llm, "PROVIDER", "featherless"), \
+         patch.object(llm, "FEATHERLESS_API_KEY", "fake-but-present-key"), \
          patch.object(llm, "MAX_RETRIES", 2), \
          patch.object(llm, "RETRY_BACKOFF_SECONDS", 0.01), \
-         patch("llm._call_gemini", side_effect=llm.LLMError("simulated 500 from Gemini")):
+         patch("llm._call_featherless", side_effect=llm.LLMError("simulated 500 from Featherless")):
         result = app.handle_call_analyzed(payload)
 
     assert result["status"] == "notes_pending", f"Expected notes_pending, got {result}"
