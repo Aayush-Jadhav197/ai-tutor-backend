@@ -193,6 +193,31 @@ in order:
    after fixing the secret.
 4. Set `WEBHOOK_VERIFY_SIGNATURE` back to `true` once confirmed working.
 
+### Troubleshooting: "webhook returns 200, but notes/SMS still never arrive"
+
+If Render logs show a `POST /webhook/vani` returning `200` (signature check
+passed, the delivery was accepted), but a few seconds later you see
+`[llm.py] featherless attempt 1/3 failed: ... 404 Client Error: Not Found
+for url: https://api.featherless.ai/v1/chat/completions`, followed by
+`[app.py] Notes generation pending` - this happened once during this
+build. Root cause: **the `FEATHERLESS_MODEL` value didn't match
+Featherless's actual model catalog naming.**
+
+Featherless's docs confirm: *"Unknown ids return a 404 with error code
+`model_not_found`"* - and their real model ids are HuggingFace-style
+`Org/ModelName` (e.g. `Qwen/Qwen2.5-7B-Instruct`), not the
+`featherless/model-name` prefix style that a different wrapper library
+(LiteLLM) uses for its own routing. Mixing the two up is an easy mistake
+and exactly what happened here.
+
+Fixed by changing the default `FEATHERLESS_MODEL` to
+`Qwen/Qwen2.5-7B-Instruct` in both `llm.py` and `.env.example`. If you
+explicitly set `FEATHERLESS_MODEL` in Render's environment tab (overriding
+the code default), double check that value against
+[featherless.ai/models](https://featherless.ai/models) - any model id
+copied from a LiteLLM example, a blog post, or another tool's config may
+carry a prefix Featherless itself doesn't recognize.
+
 ## Reliability / error handling
 
 - **Idempotency:** Vani retries webhook deliveries that don't return 2xx

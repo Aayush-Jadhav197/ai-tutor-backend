@@ -37,25 +37,64 @@ app = Flask(__name__)
 # with curl and test_day1.py needs no secret). Flip WEBHOOK_VERIFY_SIGNATURE
 # to "true" and set VANI_WEBHOOK_SECRET (from Vani's Settings -> Webhooks)
 # before the real demo.
-WEBHOOK_VERIFY_SIGNATURE = os.getenv("WEBHOOK_VERIFY_SIGNATURE", "false").lower() == "true"
-VANI_WEBHOOK_SECRET = os.getenv("VANI_WEBHOOK_SECRET", "")
+#
+# .strip() on both env vars below: a trailing newline/space from copy-paste
+# into Render's dashboard is a common, silent cause of every signature
+# check failing - better to normalize it here than debug it blind.
+WEBHOOK_VERIFY_SIGNATURE = os.getenv("WEBHOOK_VERIFY_SIGNATURE", "false").strip().lower() == "true"
+VANI_WEBHOOK_SECRET = os.getenv("VANI_WEBHOOK_SECRET", "").strip()
 # Confirmed from Vani's docs: signed deliveries use this exact header name.
-VANI_SIGNATURE_HEADER = os.getenv("VANI_SIGNATURE_HEADER", "X-Webhook-Signature")
+VANI_SIGNATURE_HEADER = os.getenv("VANI_SIGNATURE_HEADER", "X-Webhook-Signature").strip()
 
 
 def verify_webhook_signature(raw_body: bytes, signature_header: str) -> bool:
     """
     HMAC-SHA256 hex digest of the raw body, per Vani's docs. Returns True
     if valid (or verification is disabled for local testing).
+
+    Defensive against two common real-world variants beyond Vani's literal
+    docs example, since a live integration hit persistent 401s:
+      - a scheme prefix on the header value, e.g. "sha256=<hex>" (some
+        providers do this even when their docs show bare hex)
+      - incidental whitespace around either the header value or the secret
+    Logs a safe (non-secret-leaking) diagnostic on every mismatch so a
+    failure can be debugged from Render's logs alone.
     """
     if not WEBHOOK_VERIFY_SIGNATURE:
         return True
     if not VANI_WEBHOOK_SECRET or not signature_header:
+        print(
+            f"[app.py] Signature check failed: "
+            f"secret_configured={bool(VANI_WEBHOOK_SECRET)}, "
+            f"header_present={bool(signature_header)}"
+        )
         return False
+
+    received = signature_header.strip()
+    if "=" in received and received.split("=", 1)[0].lower() in ("sha256", "sha1"):
+        received = received.split("=", 1)[1].strip()
+
     expected = hmac.new(
         VANI_WEBHOOK_SECRET.encode("utf-8"), raw_body, hashlib.sha256
     ).hexdigest()
-    return hmac.compare_digest(expected, signature_header.strip())
+
+    if hmac.compare_digest(expected, received):
+        return True
+
+    # Nothing here reveals the secret itself - only lengths and short
+    # prefixes, safe to leave in production logs while debugging.
+    print(
+        "[app.py] Signature mismatch. "
+        f"received_len={len(received)} expected_len={len(expected)} "
+        f"received_prefix={received[:8]!r} expected_prefix={expected[:8]!r} "
+        f"secret_len={len(VANI_WEBHOOK_SECRET)} body_len={len(raw_body)}. "
+        "If received_len differs from expected_len, the header format doesn't "
+        "match what this code expects. If lengths match but prefixes differ, "
+        "the secret itself is likely wrong (re-copy it from Vani's dashboard, "
+        "watching for trailing whitespace) - and check whether Vani's webhook "
+        "subscription got auto-disabled after repeated failures."
+    )
+    return False
 
 
 def resolve_call_id(payload: dict, data: dict) -> str:
@@ -171,6 +210,12 @@ def vani_webhook():
     raw_body = request.get_data()
     signature = request.headers.get(VANI_SIGNATURE_HEADER, "")
     if not verify_webhook_signature(raw_body, signature):
+        if WEBHOOK_VERIFY_SIGNATURE:
+            # Header *names* are never secret - logging them helps catch a
+            # wrong VANI_SIGNATURE_HEADER value (e.g. Vani actually sends
+            # "X-Vani-Signature" or "X-Signature" instead of the assumed
+            # "X-Webhook-Signature") without exposing any values.
+            print(f"[app.py] Request headers received: {list(request.headers.keys())}")
         return jsonify({"status": "error", "reason": "invalid webhook signature"}), 401
 
     payload = request.get_json(silent=True)

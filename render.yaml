@@ -8,6 +8,8 @@ services:
     envVars:
       - key: FEATHERLESS_API_KEY
         sync: false
+      - key: FEATHERLESS_MODEL
+        value: "Qwen/Qwen2.5-7B-Instruct"
       - key: GEMINI_API_KEY
         sync: false
       - key: TWILIO_ACCOUNT_SID

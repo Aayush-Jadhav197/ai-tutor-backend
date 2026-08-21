@@ -86,7 +86,7 @@ def _call_featherless(prompt: str) -> str:
             FEATHERLESS_URL,
             headers={"Authorization": f"Bearer {FEATHERLESS_API_KEY}"},
             json={
-                "model": os.getenv("FEATHERLESS_MODEL", "featherless/qwen2.5-7b-instruct"),
+                "model": os.getenv("FEATHERLESS_MODEL", "Qwen/Qwen2.5-7B-Instruct"),
                 "messages": [{"role": "user", "content": prompt}],
             },
             timeout=20,
