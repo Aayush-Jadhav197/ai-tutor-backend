@@ -136,8 +136,8 @@ def handle_call_analyzed(payload: dict) -> dict:
         or data.get("phone_number")
         or data.get("caller_number"
                     or data.get("from")
-                    or ""
-                    )
+                    or "")
+                    
         print(f"[DEBUG] Extracted phone number: {phone_number}")
     messages = data.get("transcript", [])
         print(f"[DEBUG] Transcript type: {type(messages)}")
