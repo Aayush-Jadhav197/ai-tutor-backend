@@ -1,42 +1,5 @@
 {
-  "calls": {
-    "conv_test_001": {
-      "phone_number": "9876543210",
-      "messages": [
-        {
-          "speaker": "agent",
-          "text": "Namaste! Aap kya seekhna chahte hain?",
-          "timestamp": "2026-08-18T10:00:05Z"
-        },
-        {
-          "speaker": "user",
-          "text": "Newton ka third law samjhao",
-          "timestamp": "2026-08-18T10:00:12Z"
-        },
-        {
-          "speaker": "agent",
-          "text": "Newton ka teesra niyam kehta hai ki har action ka ek barabar aur ulta reaction hota hai. Jaise jab tum deewar ko dhakka dete ho, deewar bhi tumhe wapas dhakka deti hai.",
-          "timestamp": "2026-08-18T10:00:20Z"
-        },
-        {
-          "speaker": "user",
-          "text": "Ek aur example batao",
-          "timestamp": "2026-08-18T10:00:40Z"
-        },
-        {
-          "speaker": "agent",
-          "text": "Jab tum cycle chalate ho, pedal maarne se force zameen par lagta hai, aur zameen tumhe aage dhakka deti hai - isi wajah se cycle aage badhti hai.",
-          "timestamp": "2026-08-18T10:00:50Z"
-        }
-      ],
-      "notes": "Newton's Third Law\n\nKey Point:\nHar action ka ek barabar aur ulta reaction hota hai.\n\nImportant:\n- Forces hamesha pair mein aate hain.\n- Dono forces opposite direction mein lagti hain.\n\nExample:\nJab tum deewar ko dhakka dete ho, deewar bhi tumhe wapas dhakka deti hai.",
-      "code": "005330",
-      "notes_status": "ok",
-      "notes_error": null
-    }
-  },
-  "codes": {
-    "9876543210:005330": "conv_test_001"
-  },
+  "calls": {},
+  "codes": {},
   "processed_event_ids": {}
 }
