@@ -3,17 +3,22 @@ Notes-generation LLM client.
 
 Vani's own dashboard doesn't list Featherless as an LLM provider, so the LIVE
 tutor conversation runs inside Vani on its built-in model (Gemini 2.5
-Flash-Lite recommended). This module is NOT for the live conversation -
-that prompt lives in vani_system_prompt.txt and gets pasted into the Vani
-agent config.
+Flash-Lite, per your Vani agent config). This module is NOT for the live
+conversation - that prompt lives in vani_system_prompt.txt and gets pasted
+into the Vani agent config, untouched by anything here.
 
 This module is for the ONE THING that still needs our own LLM call:
 turning a finished call transcript into short structured revision notes,
 after Vani sends us the call.analyzed webhook.
 
-Default provider: Gemini (same family Vani itself uses, cheap, reliable).
-Swap PROVIDER below to "featherless" later if you confirm it's needed -
-the call_llm() function is the only thing that would need to change.
+Default provider: Featherless. Switched from Gemini after repeated
+real-world friction that had nothing to do with our code - Google API key
+format changes (new "AQ."-prefixed keys not working with the standard REST
+endpoint) and a model retirement (gemini-2.0-flash returning 404) both hit
+mid-build. Featherless doesn't have either failure mode: a plain bearer
+token, no Google-side model churn. Gemini support is left in place and
+still works if NOTES_LLM_PROVIDER is switched back - just not the default
+anymore.
 
 Error handling policy (important - read before changing):
   - No API key configured at all -> this is expected in local/offline dev
@@ -31,13 +36,20 @@ import os
 import time
 import requests
 
-PROVIDER = os.getenv("NOTES_LLM_PROVIDER", "gemini")  # "gemini" | "featherless"
+PROVIDER = os.getenv("NOTES_LLM_PROVIDER", "featherless")  # "featherless" | "gemini"
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 FEATHERLESS_API_KEY = os.getenv("FEATHERLESS_API_KEY", "")
 
+# Configurable, not hardcoded: Google has retired/renamed Gemini models more
+# than once during this build already (gemini-2.0-flash hit a 404 once
+# retired). Kept configurable via env var in case Gemini is ever switched
+# back to, so the next deprecation is a Render dashboard edit, not a code
+# push. Default here follows Google's own documented migration target for
+# the retired gemini-2.0-flash.
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
 GEMINI_URL = (
-    "https://generativelanguage.googleapis.com/v1beta/models/"
-    "gemini-2.0-flash:generateContent"
+    f"https://generativelanguage.googleapis.com/v1beta/models/"
+    f"{GEMINI_MODEL}:generateContent"
 )
 FEATHERLESS_URL = "https://api.featherless.ai/v1/chat/completions"
 
