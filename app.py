@@ -134,14 +134,14 @@ def handle_call_analyzed(payload: dict) -> dict:
     phone_number = (
         data.get("from_number")
         or data.get("phone_number")
-        or data.get("caller_number"
-                    or data.get("from")
-                    or "")
-                    
-        print(f"[DEBUG] Extracted phone number: {phone_number}")
+        or data.get("caller_number")
+        or data.get("from")
+        or ""
+    )
+    print(f"[DEBUG] Extracted phone number: {phone_number}")
     messages = data.get("transcript", [])
-        print(f"[DEBUG] Transcript type: {type(messages)}")
-        print(f"[DEBUG] Transcript length: {len(messages) if messages else 0}")
+    print(f"[DEBUG] Transcript type: {type(messages)}")
+    print(f"[DEBUG] Transcript length: {len(messages) if messages else 0}")
 
     store.save_call(call_id, phone_number, messages)
 
