@@ -6,6 +6,8 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
     envVars:
+      - key: FEATHERLESS_API_KEY
+        sync: false
       - key: GEMINI_API_KEY
         sync: false
       - key: TWILIO_ACCOUNT_SID
@@ -21,6 +23,6 @@ services:
       - key: VANI_SIGNATURE_HEADER
         value: "X-Webhook-Signature"
       - key: NOTES_LLM_PROVIDER
-        value: "gemini"
+        value: "featherless"
       - key: DB_PATH
         value: "data.json"
