@@ -91,7 +91,10 @@ def _call_featherless(prompt: str) -> str:
             },
             timeout=20,
         )
-        resp.raise_for_status()
+        if not resp.ok:
+            raise LLMError(
+                f"Featherless HTTP {resp.status_code}: {resp.text[:2000]}"
+            )
         data = resp.json()
         return data["choices"][0]["message"]["content"].strip()
     except requests.exceptions.RequestException as e:
